@@ -1,0 +1,73 @@
+name: Migrate Work Items
+
+on:
+  workflow_dispatch:
+    inputs: 
+      ado-org:
+        description: 'ado-org'
+        required: true
+        default: 'jjohanning0798'
+      ado-project:
+        description: 'ado-project'
+        required: true
+        default: 'PartsUnlimited'
+      ado-tag:
+        description: 'ADO tag to migrate'
+        required: true
+        default: 'migrate'
+      gh-org:
+        description: 'gh-org'
+        required: true
+        default: 'joshjohanning-org'
+      gh-repo:
+        description: 'gh-org'
+        required: true
+        default: 'migrate-ado-workitems'
+      gh_update_assigned_to:
+        description: 'Update Assigned To'
+        required: true
+        type: boolean
+        default: 'true'
+      gh_assigned_to_user_suffix:
+        description: 'EMU suffix'
+        required: true
+        default: '_corp'
+      gh_add_ado_comments:
+        description: 'Add ADO Comments'
+        required: true
+        type: boolean
+        default: 'true'
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@main
+      
+      - uses: tibdex/github-app-token@v1
+        id: get_installation_token
+        with: 
+          app_id: 179484
+          installation_id: 23995058
+          private_key: ${{ secrets.PRIVATE_KEY }}
+      
+      - name: run migration
+        shell: pwsh
+        run: |
+          # run migration script
+          
+          # cleaning up bools
+          $gh_update_assigned_to=$false
+          $gh_add_ado_comments=$false
+          
+          if("${{ github.event.inputs.gh_update_assigned_to }}" -eq "true") {
+            $gh_update_assigned_to=$true
+          }
+          
+          if("${{ github.event.inputs.gh_add_ado_comments }}" -eq "true") {
+            $gh_add_ado_comments=$true
+          }
+          
+          ./ado_workitems_to_github_issues.ps1 -ado_pat "${{ SECRETS.ADO_PAT }}" -ado_org "${{ github.event.inputs.ado-org }}" -ado_project "${{ github.event.inputs.ado-project }}" -ado_tag "${{ github.event.inputs.ado-tag }}" -gh_pat "${{ steps.get_installation_token.outputs.token }}" -gh_org "${{ github.event.inputs.gh-org }}" -gh_repo "${{ github.event.inputs.gh-repo }}" -gh_update_assigned_to $gh_update_assigned_to -gh_assigned_to_user_suffix "${{ github.event.inputs.gh_assigned_to_user_suffix }}" -gh_add_ado_comments $gh_add_ado_comments
+          
