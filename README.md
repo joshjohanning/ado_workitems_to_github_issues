@@ -2,6 +2,8 @@
 
 ##  Notes
 
+Just a heads up, if you have the `-gh_update_assigned_to` flag set to `$true`, you/your users will receive a lot of emails.
+
 ### Prerequisites
 1. Install az devops and github cli where this is running (ie: action or locally; GitHub-hosted runners already have)
 2. Create a label for EACH work item type that is being migrated (as lower case) 
@@ -30,7 +32,8 @@
 
 ### Example
 
-See [screenshot](https://user-images.githubusercontent.com/19912012/157728827-88c4d038-a37b-4246-9979-238a8c48f5ca.png)
+- [Screenshot](https://user-images.githubusercontent.com/19912012/157728827-88c4d038-a37b-4246-9979-238a8c48f5ca.png)
+- [Migrated GitHub Issue](https://github.com/joshjohanning-org/migrate-ado-workitems/issues/291)
 
 ## Instructions for Running in Actions
 

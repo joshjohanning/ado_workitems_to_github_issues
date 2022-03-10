@@ -15,7 +15,7 @@
 #
 # Things it migrates:
 # 1. Title
-# 2. Description (or repro steps + system info for a bug
+# 2. Description (or repro steps + system info for a bug)
 # 3. State (if the work item is done / closed, it will be closed in GitHub)
 # 4. It will try to assign the work item to the correct user in GitHub - based on ADO email (-gh_update_assigned_to and -gh_assigned_to_user_suffix options) - they of course have to be in GitHub already
 # 5. Migrate acceptance criteria as part of issue body (if present)
@@ -90,11 +90,22 @@ ForEach($workitem in $query) {
     $url="[Original Work Item URL](https://dev.azure.com/$ado_org/$ado_project/_workitems/edit/$($workitem.id))"
     $url | Out-File -FilePath ./temp_comment_body.txt
 
-    # create the details chart
+    # use empty string if there is no user is assigned
+    if ( $null -ne $details.fields.{System.AssignedTo}.displayName )
+    {
+        $ado_assigned_to_display_name = $details.fields.{System.AssignedTo}.displayName
+        $ado_assigned_to_unique_name = $details.fields.{System.AssignedTo}.uniqueName
+    }
+    else {
+        $ado_assigned_to_display_name = ""
+        $ado_assigned_to_unique_name = ""
+    }
+    
+    # create the details table
     $ado_details_beginning="`n`n<details><summary>Original Work Item Details</summary><p>" + "`n`n"
     $ado_details_beginning | Add-Content -Path ./temp_comment_body.txt
-    $ado_details= "| Created date | Created by | Changed date | Changed By | State | Type | Area Path | Iteration Path|`n|---|---|---|---|---|---|---|---|`n"
-    $ado_details+="| $($details.fields.{System.CreatedDate}) | $($details.fields.{System.CreatedBy}.displayName) | $($details.fields.{System.ChangedDate}) | $($details.fields.{System.ChangedBy}.displayName) | $($details.fields.{System.State}) | $($details.fields.{System.WorkItemType}) | $($details.fields.{System.AreaPath}) | $($details.fields.{System.IterationPath}) |`n`n"
+    $ado_details= "| Created date | Created by | Changed date | Changed By | Assigned To | State | Type | Area Path | Iteration Path|`n|---|---|---|---|---|---|---|---|---|`n"
+    $ado_details+="| $($details.fields.{System.CreatedDate}) | $($details.fields.{System.CreatedBy}.displayName) | $($details.fields.{System.ChangedDate}) | $($details.fields.{System.ChangedBy}.displayName) | $ado_assigned_to_display_name | $($details.fields.{System.State}) | $($details.fields.{System.WorkItemType}) | $($details.fields.{System.AreaPath}) | $($details.fields.{System.IterationPath}) |`n`n"
     $ado_details | Add-Content -Path ./temp_comment_body.txt
     $ado_details_end="`n" + "`n</p></details>"    
     $ado_details_end | Add-Content -Path ./temp_comment_body.txt
@@ -116,7 +127,6 @@ ForEach($workitem in $query) {
             $ado_original_workitem_json_beginning="`n`n<details><summary>Work Item Comments ($($response.count))</summary><p>" + "`n`n"
             $ado_original_workitem_json_beginning | Add-Content -Path ./temp_comment_body.txt
             ForEach($comment in $response.comments) {
-                # $ado_comments_details= "> **Created date**: $($comment.createdDate)`n**Created by**: $($comment.createdBy.displayName)`n**[Comment URL JSON]($($comment.url))**`n**Comment text**:$($comment.text)`n`n-----------`n`n"
                 $ado_comments_details= "| Created date | Created by | JSON URL |`n|---|---|---|`n"
                 $ado_comments_details+="| $($comment.createdDate) | $($comment.createdBy.displayName) | [URL]($($comment.url)) |`n`n"
                 $ado_comments_details+="**Comment text**: $($comment.text)`n`n-----------`n`n"
@@ -147,9 +157,8 @@ ForEach($workitem in $query) {
     }
 
     # update assigned to in GitHub if the option is set - tries to use ado email to map to github username
-    if ($gh_update_assigned_to -eq $true) {
-        $ado_assignee=$details.fields.{System.AssignedTo}.uniqueName
-        $gh_assignee=$ado_assignee.Split("@")[0]
+    if ($gh_update_assigned_to -eq $true -and $ado_assigned_to_unique_name -ne "") {
+        $gh_assignee=$ado_assigned_to_unique_name.Split("@")[0]
         $gh_assignee=$gh_assignee.Replace(".", "-") + $gh_assigned_to_user_suffix
         write-host "trying to assign to: $gh_assignee"
         $assigned=gh issue edit $issue_url --add-assignee "$gh_assignee"
