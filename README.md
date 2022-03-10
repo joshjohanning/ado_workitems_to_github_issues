@@ -25,7 +25,7 @@
 
 ### Example
 
-See [screenshot](https://user-images.githubusercontent.com/19912012/157728498-b9d05e16-2960-48e9-835e-4c6d01b9babd.png)
+See [screenshot](https://user-images.githubusercontent.com/19912012/157728827-88c4d038-a37b-4246-9979-238a8c48f5ca.png)
 
 ### Things it won't ever migrate
 1. Created date/update dates
