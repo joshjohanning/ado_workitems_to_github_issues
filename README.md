@@ -11,9 +11,9 @@
 
 ### Things it migrates
 1. Title
-2. Description (or repro steps + system info for a bug
+2. Description (or for a bug, repro steps and/or system info)
 3. State (if the work item is done / closed, it will be closed in GitHub)
-4. It will try to assign the work item to the correct user in GitHub - based on ADO email (-gh_update_assigned_to and -gh_assigned_to_user_suffix options) - they of course have to be in GitHub already
+4. It will try to assign the work item to the correct user in GitHub - based on ADO email (`-gh_update_assigned_to` and `-gh_assigned_to_user_suffix` options) - they of course have to be in GitHub already and added to the organization
 5. Migrate acceptance criteria as part of issue body (if present)
 6. Adds in the following as a comment to the issue:
     - Original work item url 
@@ -23,12 +23,12 @@
 ### To Do
 1. Create a comment on the Azure DevOps work item that says "Migrated to GitHub Issue #"
 
+### Things it won't ever migrate
+1. Created date/update dates
+
 ### Example
 
 See [screenshot](https://user-images.githubusercontent.com/19912012/157728827-88c4d038-a37b-4246-9979-238a8c48f5ca.png)
-
-### Things it won't ever migrate
-1. Created date/update dates
 
 ## Instructions for Running in Actions
 
