@@ -16,9 +16,9 @@
 4. It will try to assign the work item to the correct user in GitHub - based on ADO email (-gh_update_assigned_to and -gh_assigned_to_user_suffix options) - they of course have to be in GitHub already
 5. Migrate acceptance criteria as part of issue body (if present)
 6. Adds in the following as a comment to the issue:
-  a. Original work item url 
-  b. Basic details in a collapsed markdown table
-  c. Entire work item as JSON in a collapsed section
+    - Original work item url 
+    - Basic details in a collapsed markdown table
+    - Entire work item as JSON in a collapsed section
 
 ### To Do
 1. Create a comment on the Azure DevOps work item that says "Migrated to GitHub Issue #"
