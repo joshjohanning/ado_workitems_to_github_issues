@@ -32,8 +32,8 @@ Just a heads up, if you have the `-gh_update_assigned_to` flag set to `$true`, y
 
 ### Example
 
-- [Screenshot](https://user-images.githubusercontent.com/19912012/157728827-88c4d038-a37b-4246-9979-238a8c48f5ca.png)
-- [Migrated GitHub Issue](https://github.com/joshjohanning-org/migrate-ado-workitems/issues/291)
+- [Screenshot](https://user-images.githubusercontent.com/19912012/157745772-69f5cf75-5407-491e-a754-d94b188378ff.png)
+- [Migrated GitHub Issue](https://github.com/joshjohanning-org/migrate-ado-workitems/issues/296)
 
 ## Instructions for Running in Actions
 
