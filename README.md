@@ -7,15 +7,17 @@
 2. Create a label for EACH work item type that is being migrated (as lower case) 
     - ie: "user story", "bug", "task", "feature"
 3. Add a tag to eaach work item you want to migrate - ie: "migrate"
-    - You can modify the WIQL if you want to use a different way to migrate work items, such as UNDER [Area Path]
+    - You can modify the WIQL if you want to use a different way to migrate work items, such as `UNDER [Area Path]`
 
 ### Things it migrates
 1. Title
 2. Description (or for a bug, repro steps and/or system info)
 3. State (if the work item is done / closed, it will be closed in GitHub)
-4. It will try to assign the work item to the correct user in GitHub - based on ADO email (`-gh_update_assigned_to` and `-gh_assigned_to_user_suffix` options) - they of course have to be in GitHub already and added to the organization
-5. Migrate acceptance criteria as part of issue body (if present)
-6. Adds in the following as a comment to the issue:
+4. It will try to assign the work item to the correct user in GitHub - based on ADO email before the `@`
+    - This uses the `-gh_update_assigned_to` and `-gh_assigned_to_user_suffix` options
+    - Users have to be added to GitHub org
+6. Migrate acceptance criteria as part of issue body (if present)
+7. Adds in the following as a comment to the issue:
     - Original work item url 
     - Basic details in a collapsed markdown table
     - Entire work item as JSON in a collapsed section
