@@ -143,6 +143,14 @@ ForEach($workitem in $query) {
     # create the issue
     $issue_url=gh issue create --body-file ./temp_issue_body.txt --repo "$gh_org/$gh_repo" --title $details.fields.{System.Title} --label $work_item_type
     write-host "issue created: $issue_url"
+    
+    # update assigned to in GitHub if the option is set - tries to use ado email to map to github username
+    if ($gh_update_assigned_to -eq $true -and $ado_assigned_to_unique_name -ne "") {
+        $gh_assignee=$ado_assigned_to_unique_name.Split("@")[0]
+        $gh_assignee=$gh_assignee.Replace(".", "-") + $gh_assigned_to_user_suffix
+        write-host "trying to assign to: $gh_assignee"
+        $assigned=gh issue edit $issue_url --add-assignee "$gh_assignee"
+    }
 
     # add the comment
     $comment_url=gh issue comment $issue_url --body-file ./temp_comment_body.txt
@@ -155,12 +163,5 @@ ForEach($workitem in $query) {
     if ($details.fields.{System.State} -eq "Done" -or $details.fields.{System.State} -eq "Closed") {
         gh issue close $issue_url
     }
-
-    # update assigned to in GitHub if the option is set - tries to use ado email to map to github username
-    if ($gh_update_assigned_to -eq $true -and $ado_assigned_to_unique_name -ne "") {
-        $gh_assignee=$ado_assigned_to_unique_name.Split("@")[0]
-        $gh_assignee=$gh_assignee.Replace(".", "-") + $gh_assigned_to_user_suffix
-        write-host "trying to assign to: $gh_assignee"
-        $assigned=gh issue edit $issue_url --add-assignee "$gh_assignee"
-    }
+    
 }
