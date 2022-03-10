@@ -32,6 +32,8 @@ See [screenshot](https://user-images.githubusercontent.com/19912012/157728827-88
 
 ## Instructions for Running in Actions
 
+The recommendation is to use a GitHub App to run the migration - a GitHub app has higher rate limits than using a user PAT.
+
 1. Create GitHub App with (can use this [reference](https://josh-ops.com/posts/github-apps/#creating-a-github-app)). Use the following permissions:
     + Repo: `Contents:Read`
     + Repo: `Issues:Read and write`
