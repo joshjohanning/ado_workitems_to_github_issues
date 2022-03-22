@@ -67,6 +67,10 @@ ForEach($workitem in $query) {
     $details_json = az boards work-item show --id $workitem.id --output json
     $details = $details_json | ConvertFrom-Json
 
+    # double quotes in the title must be escaped with \ to be passed to gh cli
+    # workaround for https://github.com/cli/cli/issues/3425 and https://stackoverflow.com/questions/6714165/powershell-stripping-double-quotes-from-command-line-arguments
+    $title = $details.fields.{System.Title} -replace "`"","`\`""
+
     $description=""
 
     # bug doesn't have Description field - add repro steps and/or system info
@@ -141,7 +145,7 @@ ForEach($workitem in $query) {
     $work_item_type = $details.fields.{System.WorkItemType}.ToLower()
 
     # create the issue
-    $issue_url=gh issue create --body-file ./temp_issue_body.txt --repo "$gh_org/$gh_repo" --title $details.fields.{System.Title} --label $work_item_type
+    $issue_url=gh issue create --body-file ./temp_issue_body.txt --repo "$gh_org/$gh_repo" --title "$title" --label $work_item_type
     write-host "issue created: $issue_url"
     
     # update assigned to in GitHub if the option is set - tries to use ado email to map to github username
