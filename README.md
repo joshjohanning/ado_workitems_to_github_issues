@@ -8,8 +8,8 @@ Just a heads up, if you have the `-gh_update_assigned_to` flag set to `$true`, y
 1. Install az devops and github cli where this is running (ie: action or locally; GitHub-hosted runners already have)
 2. Create a label for EACH work item type that is being migrated (as lower case) 
     - ie: "user story", "bug", "task", "feature"
-3. Add a tag to eaach work item you want to migrate - ie: "migrate"
-    - You can modify the WIQL if you want to use a different way to migrate work items, such as `UNDER [Area Path]`
+3. define under what area path you want to migrate
+    - You can modify the WIQL if you want to use a different way to migrate work items, such as [TAG] = "migrate"
 
 ### Things it migrates
 1. Title
@@ -58,5 +58,5 @@ The recommendation is to use a GitHub App to run the migration - a GitHub app ha
 Using the GitHub app might be better so you don't reach a limit on your GitHub account on creating new issues 😀
 
 ```pwsh
-./ado_workitems_to_github_issues.ps1 -ado_pat "xxx" -ado_org "jjohanning0798" -ado_project "PartsUnlimited" -ado_tag "migrate" -gh_pat "ghp_xxx" -gh_org "joshjohanning-org" -gh_repo "migrate-ado-workitems" -gh_update_assigned_to $true -gh_assigned_to_user_suffix "_corp" -gh_add_ado_comments $true
+./ado_workitems_to_github_issues.ps1 -ado_pat "xxx" -ado_org "jjohanning0798" -ado_project "PartsUnlimited" -ado_area_path "PartsUnlimited\migrate" -gh_pat "ghp_xxx" -gh_org "joshjohanning-org" -gh_repo "migrate-ado-workitems" -gh_update_assigned_to $true -gh_assigned_to_user_suffix "_corp" -gh_add_ado_comments $true
 ```
