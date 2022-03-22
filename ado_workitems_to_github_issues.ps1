@@ -160,7 +160,8 @@ ForEach($workitem in $query) {
     Remove-Item -Path ./temp_issue_body.txt -ErrorAction SilentlyContinue
 
     # close out the issue if it's closed on the Azure Devops side
-    if ($details.fields.{System.State} -eq "Done" -or $details.fields.{System.State} -eq "Closed") {
+    $ado_closure_states = "Done","Closed","Resolved","Removed"
+    if ($ado_closure_states.Contains($details.fields.{System.State})) {
         gh issue close $issue_url
     }
     
