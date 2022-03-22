@@ -6,11 +6,11 @@
 # 1. Install az devops and github cli
 # 2. create a label for EACH work item type that is being migrated (as lower case) 
 #      - ie: "user story", "bug", "task", "feature"
-# 3. add a tag to eaach work item you want to migrate - ie: "migrate"
-#      - You can modify the WIQL if you want to use a different way to migrate work items, such as UNDER [Area Path]
+# 3. define under what area path you want to migrate
+#      - You can modify the WIQL if you want to use a different way to migrate work items, such as [TAG] = "migrate"
 
 # How to run:
-# ./ado_workitems_to_github_issues.ps1 -ado_pat "xxx" -ado_org "jjohanning0798" -ado_project "PartsUnlimited" -ado_tag "migrate" -gh_pat "xxx" -gh_org "joshjohanning-org" -gh_repo "migrate-ado-workitems" -gh_update_assigned_to $true -gh_assigned_to_user_suffix "_corp" -gh_add_ado_comments $true
+# ./ado_workitems_to_github_issues.ps1 -ado_pat "xxx" -ado_org "jjohanning0798" -ado_project "PartsUnlimited" -ado_area_path "PartsUnlimited\migrate" -gh_pat "xxx" -gh_org "joshjohanning-org" -gh_repo "migrate-ado-workitems" -gh_update_assigned_to $true -gh_assigned_to_user_suffix "_corp" -gh_add_ado_comments $true
 
 #
 # Things it migrates:
@@ -40,7 +40,7 @@ param (
     [string]$ado_pat, # Azure DevOps PAT
     [string]$ado_org, # Azure devops org without the URL, eg: "MyAzureDevOpsOrg"
     [string]$ado_project, # Team project name that contains the work items, eg: "TailWindTraders"
-    [string]$ado_tag, # only one tag is supported, would have to add another clause in the $wiql, eg: "migrate")
+    [string]$ado_area_path, # Area path in Azure DevOps to migrate; uses the 'UNDER' operator)
     [string]$gh_pat, # GitHub PAT
     [string]$gh_org, # GitHub organization to create the issues in
     [string]$gh_repo, # GitHub repository to create the issues in
@@ -53,7 +53,7 @@ echo "$ado_pat" | az devops login --organization "https://dev.azure.com/$ado_org
 az devops configure --defaults organization="https://dev.azure.com/$ado_org" project="$ado_project"
 echo $gh_pat | gh auth login --with-token
 
-$wiql="select [ID], [Title] from workitems where [Tags] CONTAINS '$ado_tag' order by [ID]"
+$wiql="select [ID], [Title] from workitems where [System.AreaPath] UNDER '$ado_area_path' order by [ID]"
 
 $query=az boards query --wiql $wiql | ConvertFrom-Json
 
