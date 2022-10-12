@@ -166,13 +166,13 @@ ForEach($workitem in $query) {
     if ($gh_update_assigned_to -eq $true -and $ado_assigned_to_unique_name -ne "") {
         $gh_assignee=$ado_assigned_to_unique_name.Split("@")[0]
         $gh_assignee=$gh_assignee.Replace(".", "-") + $gh_assigned_to_user_suffix
-        write-host "trying to assign to: $gh_assignee"
+        write-host "  trying to assign to: $gh_assignee"
         $assigned=gh issue edit $issue_url --add-assignee "$gh_assignee"
     }
 
     # add the comment
     $comment_url=gh issue comment $issue_url --body-file ./temp_comment_body.txt
-    write-host "comment created: $comment_url"
+    write-host "  comment created: $comment_url"
 
     Remove-Item -Path ./temp_comment_body.txt -ErrorAction SilentlyContinue
     Remove-Item -Path ./temp_issue_body.txt -ErrorAction SilentlyContinue
