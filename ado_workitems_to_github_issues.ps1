@@ -52,7 +52,7 @@ $env:GH_TOKEN = $gh_pat;
 
 az devops configure --defaults organization="https://dev.azure.com/$ado_org" project="$ado_project"
 
-$wiql = "select [ID], [Title], [System.Tags] from workitems where [State] <> 'Done' and [State] <> 'Closed' and [State] <> 'Resolved' and [State] <> 'Removed' and [System.AreaPath] UNDER '$ado_area_path' and [System.Title] Contains 'CodeQL' and not [System.Tags] Contains 'copied-to-github' order by [ID]";
+$wiql = "select [ID], [Title], [System.Tags] from workitems where [State] <> 'Done' and [State] <> 'Closed' and [State] <> 'Resolved' and [State] <> 'Removed' and [System.AreaPath] UNDER '$ado_area_path' and not [System.Tags] Contains 'copied-to-github' order by [ID]";
 
 $query=az boards query --wiql $wiql | ConvertFrom-Json
 
