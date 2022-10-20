@@ -10,7 +10,7 @@
 #      - You can modify the WIQL if you want to use a different way to migrate work items, such as [TAG] = "migrate"
 
 # How to run:
-# ./ado_workitems_to_github_issues.ps1 -ado_pat "xxx" -ado_org "jjohanning0798" -ado_project "PartsUnlimited" -ado_area_path "PartsUnlimited\migrate" -gh_pat "xxx" -gh_org "joshjohanning-org" -gh_repo "migrate-ado-workitems" -gh_update_assigned_to $true -gh_assigned_to_user_suffix "_corp" -gh_migrate_ado_comments $true -gh_migrate_closed_workitems $false -ado_production_run $true
+# ./ado_workitems_to_github_issues.ps1 -ado_pat "xxx" -ado_org "jjohanning0798" -ado_project "PartsUnlimited" -ado_area_path "PartsUnlimited\migrate" -ado_migrate_closed_workitems $false -ado_production_run $true -gh_pat "xxx" -gh_org "joshjohanning-org" -gh_repo "migrate-ado-workitems" -gh_update_assigned_to $true -gh_assigned_to_user_suffix "_corp" -gh_migrate_ado_comments $true
 
 #
 # Things it migrates:
