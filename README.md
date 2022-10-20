@@ -1,31 +1,32 @@
 # ado_workitems_to_github_issues
 
-##  Notes
-
-Just a heads up, if you have the `-gh_update_assigned_to` flag set to `$true`, you/your users will receive a lot of emails.
+PowerShell script to migrate Azure DevOps work items to GitHub Issues
 
 ### Prerequisites
+
 1. Install az devops and github cli where this is running (ie: action or locally; GitHub-hosted runners already have)
-2. Create a label for EACH work item type that is being migrated (as lower case) 
+2. In GitHub, [create a label](https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work/managing-labels) for EACH work item type that is being migrated (as lower case) 
     - ie: "user story", "bug", "task", "feature"
-3. define under what area path you want to migrate
-    - You can modify the WIQL if you want to use a different way to migrate work items, such as [TAG] = "migrate"
+3. Define under what area path you want to migrate
+    - You can modify the WIQL if you want to use a different way to migrate work items, such as `[TAG] = "migrate"`
 
 ### Things it migrates
+
 1. Title
 2. Description (or for a bug, repro steps and/or system info)
 3. State (if the work item is done / closed, it will be closed in GitHub)
 4. It will try to assign the work item to the correct user in GitHub - based on ADO email before the `@`
     - This uses the `-gh_update_assigned_to` and `-gh_assigned_to_user_suffix` options
     - Users have to be added to GitHub org
-6. Migrate acceptance criteria as part of issue body (if present)
-7. Adds in the following as a comment to the issue:
+5. Migrate acceptance criteria as part of issue body (if present)
+6. Adds in the following as a comment to the issue:
     - Original work item url 
     - Basic details in a collapsed markdown table
     - Entire work item as JSON in a collapsed section
+7. Creates tag "copied-to-github" and a comment on the ADO work item with `-$ado_production_run $true"`. The tag prevents duplicate copying.
 
 ### To Do
-1. Create a comment on the Azure DevOps work item that says "Migrated to GitHub Issue #"
+1. Provide user mapping option
 
 ### Things it won't ever migrate
 1. Created date/update dates
@@ -58,5 +59,36 @@ The recommendation is to use a GitHub App to run the migration - a GitHub app ha
 Using the GitHub app might be better so you don't reach a limit on your GitHub account on creating new issues 😀
 
 ```pwsh
-./ado_workitems_to_github_issues.ps1 -ado_pat "xxx" -ado_org "jjohanning0798" -ado_project "PartsUnlimited" -ado_area_path "PartsUnlimited\migrate" -gh_pat "ghp_xxx" -gh_org "joshjohanning-org" -gh_repo "migrate-ado-workitems" -gh_update_assigned_to $true -gh_assigned_to_user_suffix "_corp" -gh_add_ado_comments $true
+./ado_workitems_to_github_issues.ps1 `
+    -ado_pat "abc" `
+    -ado_org "jjohanning0798" `
+    -ado_project "PartsUnlimited" `
+    -ado_area_path "PartsUnlimited\migrate" `
+    -ado_migrate_closed_workitems $false `
+    -ado_production_run $false `
+    -gh_pat "ghp_xxx" `
+    -gh_org "joshjohanning-org" `
+    -gh_repo "migrate-ado-workitems" `
+    -gh_update_assigned_to $true `
+    -gh_assigned_to_user_suffix "" `
+    -gh_migrate_ado_comments $true
 ```
+
+## Script Options
+
+| Parameter                       | Required | Default  | Description                                                                                                                                 |
+|---------------------------------|----------|----------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| `-ado_pat`                      | Yes      |          | Azure DevOps Personal Access Token (PAT) with appropriate permissions to read work items (and update, with `-ado_production_run $true`)     |
+| `-ado_org`                      | Yes      |          | Azure DevOps organization to migrate from                                                                                                   |
+| `-ado_project`                  | Yes      |          | Azure DevOps project to migrate from                                                                                                        |
+| `-ado_area_path`                | Yes      |          | Azure DevOps area path to migrate from - uses the `UNDER` operator                                                                          |
+| `-ado_migrate_closed_workitems` | No       | `$false` | Switch to migrate closed/resoled/done/removed work items                                                                                    |
+| `-ado_production_run`           | No       | `$false` | Switch to add `copied-to-github` tag and comment on ADO work item                                                                           |
+| `-gh_pat`                       | Yes      |          | GitHub Personal Access Token (PAT) with appropriate permissions to read/write issues                                                        |
+| `-gh_org`                       | Yes      |          | GitHub organization to migrate work items to                                                                                                |
+| `-gh_repo`                      | Yes      |          | GitHub repo to migrate work items to                                                                                                        |
+| `-gh_update_assigned_to`        | No       | `$false` | Switch to update the GitHub issue's assignee based on the username portion of an email address (before the @ sign)                          |
+| `-gh_assigned_to_user_suffix`   | No       | `""`     | Used in conjunction with `-gh_update_assigned_to`, used to suffix the username, e.g. if using GitHub Enterprise Managed User (EMU) instance |
+| `-gh_migrate_ado_comments`      | No       | `$false` | Switch to migrate ADO comments as a section with the migrated work item                                                                     |
+
++ **Note**: With `-gh_update_assigned_to $true`, you/your users will receive a lot of emails from GitHub when the user is assigned to the issue
