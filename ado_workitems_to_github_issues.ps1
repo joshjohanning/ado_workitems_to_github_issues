@@ -10,7 +10,7 @@
 #      - You can modify the WIQL if you want to use a different way to migrate work items, such as [TAG] = "migrate"
 
 # How to run:
-# ./ado_workitems_to_github_issues.ps1 -ado_pat "xxx" -ado_org "jjohanning0798" -ado_project "PartsUnlimited" -ado_area_path "PartsUnlimited\migrate" -gh_pat "xxx" -gh_org "joshjohanning-org" -gh_repo "migrate-ado-workitems" -gh_update_assigned_to $true -gh_assigned_to_user_suffix "_corp" -gh_add_ado_comments $true
+# ./ado_workitems_to_github_issues.ps1 -ado_pat "xxx" -ado_org "jjohanning0798" -ado_project "PartsUnlimited" -ado_area_path "PartsUnlimited\migrate" -gh_pat "xxx" -gh_org "joshjohanning-org" -gh_repo "migrate-ado-workitems" -gh_update_assigned_to $true -gh_assigned_to_user_suffix "_corp" -gh_migrate_ado_comments $true -gh_migrate_closed_workitems $false -ado_production_run $true
 
 #
 # Things it migrates:
@@ -23,13 +23,13 @@
 #   a. Original work item url 
 #   b. Basic details in a collapsed markdown table
 #   c. Entire work item as JSON in a collapsed section
-# 7. Creates tag "copied-to-github" and a comment on the ADO work item. The tag prevents duplicate copying.
+# 7. Creates tag "copied-to-github" and a comment on the ADO work item with `-$ado_production_run $true` . The tag prevents duplicate copying.
 #
 
 #
 # Things it won't ever migrate:
 # 1. Created date/update dates
-# 
+#
 
 [CmdletBinding()]
 param (
@@ -37,12 +37,14 @@ param (
     [string]$ado_org, # Azure devops org without the URL, eg: "MyAzureDevOpsOrg"
     [string]$ado_project, # Team project name that contains the work items, eg: "TailWindTraders"
     [string]$ado_area_path, # Area path in Azure DevOps to migrate; uses the 'UNDER' operator)
+    [bool]$ado_migrate_closed_workitems = $false, # migrate work items with the state of done, closed, resolved, and removed
+    [bool]$ado_production_run = $false, # tag migrated work items with 'migrated-to-github' and add discussion comment
     [string]$gh_pat, # GitHub PAT
     [string]$gh_org, # GitHub organization to create the issues in
     [string]$gh_repo, # GitHub repository to create the issues in
     [bool]$gh_update_assigned_to = $false, # try to update the assigned to field in GitHub
     [string]$gh_assigned_to_user_suffix = "", # the emu suffix, ie: "_corp"
-    [bool]$gh_add_ado_comments = $false # try to get ado comments
+    [bool]$gh_migrate_ado_comments = $false # try to get ado comments
 )
 
 # Set the auth token for az commands
@@ -52,7 +54,12 @@ $env:GH_TOKEN = $gh_pat;
 
 az devops configure --defaults organization="https://dev.azure.com/$ado_org" project="$ado_project"
 
-$wiql = "select [ID], [Title], [System.Tags] from workitems where [State] <> 'Done' and [State] <> 'Closed' and [State] <> 'Resolved' and [State] <> 'Removed' and [System.AreaPath] UNDER '$ado_area_path' and not [System.Tags] Contains 'copied-to-github' order by [ID]";
+# add the wiql to not migrate closed work items
+if (!$ado_migrate_closed_workitems) {
+    $closed_wiql = "[State] <> 'Done' and [State] <> 'Closed' and [State] <> 'Resolved' and [State] <> 'Removed' and"
+}
+
+$wiql = "select [ID], [Title], [System.Tags] from workitems where $closed_wiql [System.AreaPath] UNDER '$ado_area_path' and not [System.Tags] Contains 'copied-to-github' order by [ID]";
 
 $query=az boards query --wiql $wiql | ConvertFrom-Json
 
@@ -65,7 +72,6 @@ ForEach($workitem in $query) {
     $original_workitem_json_end="`n" + '```' + "`n</p></details>"
 
     $workitemId = $workitem.id;
-    $workitemTags = $workitem.fields.'System.Tags';
 
     $details_json = az boards work-item show --id $workitem.id --output json
     $details = $details_json | ConvertFrom-Json
@@ -127,7 +133,7 @@ ForEach($workitem in $query) {
     $original_workitem_json_end | Add-Content -Path ./temp_comment_body.txt -Encoding ASCII;
 
     # getting comments if enabled
-    if($gh_add_ado_comments -eq $true) {
+    if($gh_migrate_ado_comments -eq $true) {
         $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
         $base64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(":$ado_pat"))
         $headers.Add("Authorization", "Basic $base64")
@@ -178,8 +184,11 @@ ForEach($workitem in $query) {
     Remove-Item -Path ./temp_issue_body.txt -ErrorAction SilentlyContinue
 
     # Add the tag "copied-to-github" plus a comment to the work item
-    $discussion = "This work item was copied to github as issue <a href=`"$issue_url`">$issue_url</a>";
-    az boards work-item update --id "$workitemId" --fields "System.Tags=copied-to-github; $workitemTags" --discussion "$discussion" | Out-Null;
+    if ($ado_production_run) {
+        $workitemTags = $workitem.fields.'System.Tags';
+        $discussion = "This work item was copied to github as issue <a href=`"$issue_url`">$issue_url</a>";
+        az boards work-item update --id "$workitemId" --fields "System.Tags=copied-to-github; $workitemTags" --discussion "$discussion" | Out-Null;    
+    }
 
     # close out the issue if it's closed on the Azure Devops side
     $ado_closure_states = "Done","Closed","Resolved","Removed"
