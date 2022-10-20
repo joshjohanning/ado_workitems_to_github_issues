@@ -71,7 +71,7 @@ Using the GitHub app might be better so you don't reach a limit on your GitHub a
     -gh_repo "migrate-ado-workitems" `
     -gh_update_assigned_to $true `
     -gh_assigned_to_user_suffix "" `
-    -gh_migrate_ado_comments $true
+    -gh_add_ado_comments $true
 ```
 
 ## Script Options
@@ -89,6 +89,6 @@ Using the GitHub app might be better so you don't reach a limit on your GitHub a
 | `-gh_repo`                      | Yes      |          | GitHub repo to migrate work items to                                                                                                        |
 | `-gh_update_assigned_to`        | No       | `$false` | Switch to update the GitHub issue's assignee based on the username portion of an email address (before the @ sign)                          |
 | `-gh_assigned_to_user_suffix`   | No       | `""`     | Used in conjunction with `-gh_update_assigned_to`, used to suffix the username, e.g. if using GitHub Enterprise Managed User (EMU) instance |
-| `-gh_migrate_ado_comments`      | No       | `$false` | Switch to migrate ADO comments as a section with the migrated work item                                                                     |
+| `-gh_add_ado_comments`          | No       | `$false` | Switch to add ADO comments as a section with the migrated work item                                                                     |
 
 + **Note**: With `-gh_update_assigned_to $true`, you/your users will receive a lot of emails from GitHub when the user is assigned to the issue
