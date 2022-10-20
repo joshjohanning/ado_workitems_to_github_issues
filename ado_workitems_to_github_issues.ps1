@@ -10,7 +10,7 @@
 #      - You can modify the WIQL if you want to use a different way to migrate work items, such as [TAG] = "migrate"
 
 # How to run:
-# ./ado_workitems_to_github_issues.ps1 -ado_pat "xxx" -ado_org "jjohanning0798" -ado_project "PartsUnlimited" -ado_area_path "PartsUnlimited\migrate" -ado_migrate_closed_workitems $false -ado_production_run $true -gh_pat "xxx" -gh_org "joshjohanning-org" -gh_repo "migrate-ado-workitems" -gh_update_assigned_to $true -gh_assigned_to_user_suffix "_corp" -gh_migrate_ado_comments $true
+# ./ado_workitems_to_github_issues.ps1 -ado_pat "xxx" -ado_org "jjohanning0798" -ado_project "PartsUnlimited" -ado_area_path "PartsUnlimited\migrate" -ado_migrate_closed_workitems $false -ado_production_run $true -gh_pat "xxx" -gh_org "joshjohanning-org" -gh_repo "migrate-ado-workitems" -gh_update_assigned_to $true -gh_assigned_to_user_suffix "_corp" -gh_add_ado_comments $true
 
 #
 # Things it migrates:
@@ -44,7 +44,7 @@ param (
     [string]$gh_repo, # GitHub repository to create the issues in
     [bool]$gh_update_assigned_to = $false, # try to update the assigned to field in GitHub
     [string]$gh_assigned_to_user_suffix = "", # the emu suffix, ie: "_corp"
-    [bool]$gh_migrate_ado_comments = $false # try to get ado comments
+    [bool]$gh_add_ado_comments = $false # try to get ado comments
 )
 
 # Set the auth token for az commands
@@ -133,7 +133,7 @@ ForEach($workitem in $query) {
     $original_workitem_json_end | Add-Content -Path ./temp_comment_body.txt -Encoding ASCII;
 
     # getting comments if enabled
-    if($gh_migrate_ado_comments -eq $true) {
+    if($gh_add_ado_comments -eq $true) {
         $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
         $base64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(":$ado_pat"))
         $headers.Add("Authorization", "Basic $base64")
