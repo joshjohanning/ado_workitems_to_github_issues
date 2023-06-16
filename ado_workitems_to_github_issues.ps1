@@ -63,8 +63,6 @@ $wiql = "select [ID], [Title], [System.Tags] from workitems where $closed_wiql [
 
 $query=az boards query --wiql $wiql | ConvertFrom-Json
 
-Remove-Item -Path ./temp_comment_body.txt -ErrorAction SilentlyContinue
-Remove-Item -Path ./temp_issue_body.txt -ErrorAction SilentlyContinue
 $count = 0;
 
 ForEach($workitem in $query) {
@@ -102,11 +100,8 @@ ForEach($workitem in $query) {
         }
     }
 
-    $description | Out-File -FilePath ./temp_issue_body.txt -Encoding ASCII;
-
-    $url="[Original Work Item URL](https://dev.azure.com/$ado_org/$ado_project/_workitems/edit/$($workitem.id))"
-    $url | Out-File -FilePath ./temp_comment_body.txt -Encoding ASCII;
-
+    $gh_comment="[Original Work Item URL](https://dev.azure.com/$ado_org/$ado_project/_workitems/edit/$($workitem.id))"
+    
     # use empty string if there is no user is assigned
     if ( $null -ne $details.fields.{System.AssignedTo}.displayName )
     {
@@ -119,18 +114,12 @@ ForEach($workitem in $query) {
     }
     
     # create the details table
-    $ado_details_beginning="`n`n<details><summary>Original Work Item Details</summary><p>" + "`n`n"
-    $ado_details_beginning | Add-Content -Path ./temp_comment_body.txt -Encoding ASCII;
-    $ado_details= "| Created date | Created by | Changed date | Changed By | Assigned To | State | Type | Area Path | Iteration Path|`n|---|---|---|---|---|---|---|---|---|`n"
-    $ado_details+="| $($details.fields.{System.CreatedDate}) | $($details.fields.{System.CreatedBy}.displayName) | $($details.fields.{System.ChangedDate}) | $($details.fields.{System.ChangedBy}.displayName) | $ado_assigned_to_display_name | $($details.fields.{System.State}) | $($details.fields.{System.WorkItemType}) | $($details.fields.{System.AreaPath}) | $($details.fields.{System.IterationPath}) |`n`n"
-    $ado_details | Add-Content -Path ./temp_comment_body.txt -Encoding ASCII;
-    $ado_details_end="`n" + "`n</p></details>"    
-    $ado_details_end | Add-Content -Path ./temp_comment_body.txt -Encoding ASCII;
+    $gh_comment+="`n`n<details><summary>Original Work Item Details</summary><p>" + "`n`n"
+    $gh_comment+= "| Created date | Created by | Changed date | Changed By | Assigned To | State | Type | Area Path | Iteration Path|`n|---|---|---|---|---|---|---|---|---|`n"
+    $gh_comment+="| $($details.fields.{System.CreatedDate}) | $($details.fields.{System.CreatedBy}.displayName) | $($details.fields.{System.ChangedDate}) | $($details.fields.{System.ChangedBy}.displayName) | $ado_assigned_to_display_name | $($details.fields.{System.State}) | $($details.fields.{System.WorkItemType}) | $($details.fields.{System.AreaPath}) | $($details.fields.{System.IterationPath}) |`n`n"
+    $gh_comment+="`n" + "`n</p></details>"
 
     # prepare the comment
-    $original_workitem_json_beginning | Add-Content -Path ./temp_comment_body.txt -Encoding ASCII;
-    $details_json | Add-Content -Path ./temp_comment_body.txt -Encoding ASCII;
-    $original_workitem_json_end | Add-Content -Path ./temp_comment_body.txt -Encoding ASCII;
 
     # getting comments if enabled
     if($gh_add_ado_comments -eq $true) {
@@ -140,25 +129,68 @@ ForEach($workitem in $query) {
         $response = Invoke-RestMethod "https://dev.azure.com/$ado_org/$ado_project/_apis/wit/workItems/$($workitem.id)/comments?api-version=7.1-preview.3" -Method 'GET' -Headers $headers
         
         if($response.count -gt 0) {
-            $ado_comments_details=""
-            $ado_original_workitem_json_beginning="`n`n<details><summary>Work Item Comments ($($response.count))</summary><p>" + "`n`n"
-            $ado_original_workitem_json_beginning | Add-Content -Path ./temp_comment_body.txt -Encoding ASCII;
+            $gh_comment+="`n`n<details><summary>Work Item Comments ($($response.count))</summary><p>" + "`n`n"
             ForEach($comment in $response.comments) {
-                $ado_comments_details= "| Created date | Created by | JSON URL |`n|---|---|---|`n"
-                $ado_comments_details+="| $($comment.createdDate) | $($comment.createdBy.displayName) | [URL]($($comment.url)) |`n`n"
-                $ado_comments_details+="**Comment text**: $($comment.text)`n`n-----------`n`n"
-                $ado_comments_details | Add-Content -Path ./temp_comment_body.txt -Encoding ASCII;
+                $gh_comment+= "| Created date | Created by | JSON URL |`n|---|---|---|`n"
+                $gh_comment+="| $($comment.createdDate) | $($comment.createdBy.displayName) | [URL]($($comment.url)) |`n`n"
+                $gh_comment+="**Comment text**: $($comment.text)`n`n-----------`n`n"
             }
-            $ado_original_workitem_json_end="`n" + "`n</p></details>"
-            $ado_original_workitem_json_end | Add-Content -Path ./temp_comment_body.txt -Encoding ASCII;
+            $gh_comment+="`n" + "`n</p></details>"
         }
     }
     
     # setting the label on the issue to be the work item type
     $work_item_type = $details.fields.{System.WorkItemType}.ToLower()
 
-    # create the issue
-    $issue_url=gh issue create --body-file ./temp_issue_body.txt --repo "$gh_org/$gh_repo" --title "$title" --label $work_item_type
+    $issueHeaders = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
+    $issueHeaders.Add("Authorization", "token $gh_pat")
+    $issueHeaders.Add("Accept", "application/vnd.github.golden-comet-preview+json")
+    $issueHeaders.Add("Content-Type", "application/json")
+
+    Write-Host "Migrating https://dev.azure.com/$ado_org/$ado_project/_workitems/edit/$($workitem.id)"
+
+    if ([string]::IsNullOrEmpty($description)){
+        # Can't have an empty body on this API, so add work item url
+        $description = "[Original Work Item URL](https://dev.azure.com/$ado_org/$ado_project/_workitems/edit/$($workitem.id))"
+    }
+
+    $params = @{
+        issue = @{
+            title = "$title"
+            body = "$description"
+        }
+        comments = @(@{
+            body = "$gh_comment"
+        })
+    } | ConvertTo-Json
+
+    Write-Host "  Issue creation request: $params";
+    $issueMigrateResponse = Invoke-RestMethod  https://api.github.com/repos/$gh_org/$gh_repo/import/issues -Method 'POST' -Body $params -Headers $issueHeaders
+
+    Write-Host "  Issue creation response: $issueMigrateResponse";
+    $issue_url = ""
+    while($true) {
+        Write-Host "Sleeping for 1 seconds..."
+        Start-Sleep -Seconds 1
+        $issueCreationResponse = Invoke-RestMethod $issueMigrateResponse.url -Method 'GET' -Headers $issueHeaders -StatusCodeVariable 'statusCode'
+
+        Write-Host "  Issue creation response: $issueCreationResponse";
+        Write-Host "  Status code: $statusCode";
+        if ($statusCode -eq 404) {
+            continue
+        }
+
+        if ($statusCode -ne 200) {
+            throw "Issue creation failed with status code $statusCode"
+        }
+
+        if ($issueCreationResponse.status -eq "imported") {
+            $issue_url = $issueCreationResponse.issue_url
+            break
+        } elseif ($issueCreationResponse.status -eq "failed") {
+            throw "Issue creation failed with message $issueCreationResponse"
+        }
+    }
     
     if (![string]::IsNullOrEmpty($issue_url.Trim())) {
         Write-Host "  Issue created: $issue_url";
@@ -175,13 +207,6 @@ ForEach($workitem in $query) {
         write-host "  trying to assign to: $gh_assignee"
         $assigned=gh issue edit $issue_url --add-assignee "$gh_assignee"
     }
-
-    # add the comment
-    $comment_url=gh issue comment $issue_url --body-file ./temp_comment_body.txt
-    write-host "  comment created: $comment_url"
-
-    Remove-Item -Path ./temp_comment_body.txt -ErrorAction SilentlyContinue
-    Remove-Item -Path ./temp_issue_body.txt -ErrorAction SilentlyContinue
 
     # Add the tag "copied-to-github" plus a comment to the work item
     if ($ado_production_run) {
