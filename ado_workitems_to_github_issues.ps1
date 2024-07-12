@@ -4,7 +4,7 @@
 
 # Prerequisites:
 # 1. Install az devops and github cli
-# 2. create a label for EACH work item type that is being migrated (as lower case) 
+# 2. create a label for EACH work item type that is being migrated (as lower case)
 #      - ie: "user story", "bug", "task", "feature"
 # 3. define under what area path you want to migrate
 #      - You can modify the WIQL if you want to use a different way to migrate work items, such as [TAG] = "migrate"
@@ -20,7 +20,7 @@
 # 4. It will try to assign the work item to the correct user in GitHub - based on ADO email (-gh_update_assigned_to and -gh_assigned_to_user_suffix options) - they of course have to be in GitHub already
 # 5. Migrate acceptance criteria as part of issue body (if present)
 # 6. Adds in the following as a comment to the issue:
-#   a. Original work item url 
+#   a. Original work item url
 #   b. Basic details in a collapsed markdown table
 #   c. Entire work item as JSON in a collapsed section
 # 7. Creates tag "copied-to-github" and a comment on the ADO work item with `-$ado_production_run $true` . The tag prevents duplicate copying.
@@ -117,14 +117,14 @@ ForEach($workitem in $query) {
         $ado_assigned_to_display_name = ""
         $ado_assigned_to_unique_name = ""
     }
-    
+
     # create the details table
     $ado_details_beginning="`n`n<details><summary>Original Work Item Details</summary><p>" + "`n`n"
     $ado_details_beginning | Add-Content -Path ./temp_comment_body.txt -Encoding ASCII;
     $ado_details= "| Created date | Created by | Changed date | Changed By | Assigned To | State | Type | Area Path | Iteration Path|`n|---|---|---|---|---|---|---|---|---|`n"
     $ado_details+="| $($details.fields.{System.CreatedDate}) | $($details.fields.{System.CreatedBy}.displayName) | $($details.fields.{System.ChangedDate}) | $($details.fields.{System.ChangedBy}.displayName) | $ado_assigned_to_display_name | $($details.fields.{System.State}) | $($details.fields.{System.WorkItemType}) | $($details.fields.{System.AreaPath}) | $($details.fields.{System.IterationPath}) |`n`n"
     $ado_details | Add-Content -Path ./temp_comment_body.txt -Encoding ASCII;
-    $ado_details_end="`n" + "`n</p></details>"    
+    $ado_details_end="`n" + "`n</p></details>"
     $ado_details_end | Add-Content -Path ./temp_comment_body.txt -Encoding ASCII;
 
     # prepare the comment
@@ -138,7 +138,7 @@ ForEach($workitem in $query) {
         $base64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(":$ado_pat"))
         $headers.Add("Authorization", "Basic $base64")
         $response = Invoke-RestMethod "https://dev.azure.com/$ado_org/$ado_project/_apis/wit/workItems/$($workitem.id)/comments?api-version=7.1-preview.3" -Method 'GET' -Headers $headers
-        
+
         if($response.count -gt 0) {
             $ado_comments_details=""
             $ado_original_workitem_json_beginning="`n`n<details><summary>Work Item Comments ($($response.count))</summary><p>" + "`n`n"
@@ -153,13 +153,13 @@ ForEach($workitem in $query) {
             $ado_original_workitem_json_end | Add-Content -Path ./temp_comment_body.txt -Encoding ASCII;
         }
     }
-    
+
     # setting the label on the issue to be the work item type
     $work_item_type = $details.fields.{System.WorkItemType}.ToLower()
 
     # create the issue
     $issue_url=gh issue create --body-file ./temp_issue_body.txt --repo "$gh_org/$gh_repo" --title "$title" --label $work_item_type
-    
+
     if (![string]::IsNullOrEmpty($issue_url.Trim())) {
         Write-Host "  Issue created: $issue_url";
         $count++;
@@ -167,7 +167,7 @@ ForEach($workitem in $query) {
     else {
         throw "Issue creation failed.";
     }
-    
+
     # update assigned to in GitHub if the option is set - tries to use ado email to map to github username
     if ($gh_update_assigned_to -eq $true -and $ado_assigned_to_unique_name -ne "") {
         $gh_assignee=$ado_assigned_to_unique_name.Split("@")[0]
@@ -187,7 +187,7 @@ ForEach($workitem in $query) {
     if ($ado_production_run) {
         $workitemTags = $workitem.fields.'System.Tags';
         $discussion = "This work item was copied to github as issue <a href=`"$issue_url`">$issue_url</a>";
-        az boards work-item update --id "$workitemId" --fields "System.Tags=copied-to-github; $workitemTags" --discussion "$discussion" | Out-Null;    
+        az boards work-item update --id "$workitemId" --fields "System.Tags=copied-to-github; $workitemTags" --discussion "$discussion" | Out-Null;
     }
 
     # close out the issue if it's closed on the Azure Devops side
@@ -195,6 +195,6 @@ ForEach($workitem in $query) {
     if ($ado_closure_states.Contains($details.fields.{System.State})) {
         gh issue close $issue_url
     }
-    
+
 }
 Write-Host "Total items copied: $count"

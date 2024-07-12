@@ -19,12 +19,12 @@ on:
         description: "Migrate closed work items"
         required: true
         type: boolean
-        default: "true"
+        default: true
       ado_production_run:
         description: tag migrated work items with migrated-to-github and add discussion comment
         required: true
         type: boolean
-        default: "true"
+        default: true
       gh-org:
         description: "gh-org"
         required: true
@@ -37,7 +37,7 @@ on:
         description: "Update Assigned To"
         required: true
         type: boolean
-        default: "true"
+        default: true
       gh_assigned_to_user_suffix:
         description: "EMU suffix"
         required: true
@@ -46,7 +46,7 @@ on:
         description: "Add ADO Comments"
         required: true
         type: boolean
-        default: "true"
+        default: true
 
 jobs:
   migrate:
