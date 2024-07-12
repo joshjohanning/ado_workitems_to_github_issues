@@ -1,0 +1,59 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/gitguardian/ggshield
+    rev: v1.29.0
+    hooks:
+      - id: ggshield
+        language_version: python3
+        stages: [commit]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: no-commit-to-branch
+        args: [--branch=main]
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.40.0
+    hooks:
+      - id: markdownlint
+        args: [--config=.markdownlint.yaml]
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.28.3
+    hooks:
+      - id: check-github-workflows
+      - id: check-github-actions
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.79.1
+    hooks:
+      - id: terraform_fmt
+        args:
+            - --args=-recursive
+      - id: terraform_tflint
+        args:
+          # Permanently Disabled Checks
+          - --args=--disable-rule=terraform_required_version # We manage TF Version in GH Workflow
+          # Disabled for this Project
+          # Temporarily Disabled Checks
+      - id: terraform_checkov
+        args:
+          - --args=--quiet
+          # - --args=--compact
+          # Permanently Disabled Checks
+          - --args=--skip-check CKV_AZURE_189 # We use Azure KeyVault on GH Actions
+          - --args=--skip-check CKV_AZURE_109 # Maintaining a list of allowed GH Action Worker IPs is not feasible
+          - --args=--skip-check CKV_AZURE_190 # No longer valid https://github.com/bridgecrewio/checkov/issues/4307
+          - --args=--skip-check CKV2_AZURE_1 # Customer managed keys
+          - --args=--skip-check CKV2_AZURE_18 # Customer managed keys
+          - --args=--skip-check CKV2_AZURE_32 # KeyVault Private endpoints are overly complicated for 99% of our clients
+          - --args=--skip-check CKV2_AZURE_33 # Storage Account Private endpoints are overly complicated for 99% of our clients
+          - --args=--skip-check CKV2_AZURE_47 # That only apply for no Azure Cloud (Azure Gov, China, etc)
+          - --args=--skip-check CKV2_AZURE_41 # The SAS accounts, not need limited for the duration. In general we not use sas accounts
+          - --args=--skip-check CKV_AZURE_33 # The rule only apply for Queue, and we not use Queue in general
+
+          # Disabled for this Project
+          # Temporarily Disabled Checks
