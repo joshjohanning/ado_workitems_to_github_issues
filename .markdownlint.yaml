@@ -1,0 +1,18 @@
+# MARKDOWN LINT CONFIGURATION
+# https://github.com/DavidAnson/markdownlint/blob/main/schema/.markdownlint.yaml
+
+# Default state for all rules
+default: true
+
+# MD013/line-length - Line length
+MD013:
+  # Include tables
+  tables: false
+
+# MD024/no-duplicate-heading/no-duplicate-header - Multiple headings with the same content
+MD024:
+  # Only check sibling headings
+  siblings_only: true
+
+# MD036/no-emphasis-as-heading/no-emphasis-as-header - Emphasis used instead of a heading
+MD036: false
