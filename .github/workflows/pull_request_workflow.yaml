@@ -1,0 +1,14 @@
+on:
+  pull_request:
+
+permissions: read-all
+
+jobs:
+  pull_request_workflow:
+    uses: exit83/shared-workflows/.github/workflows/code_quality.yaml@main
+    with:
+      jest: 'no'
+      playwright: 'no'
+      pre_commit: 'yes'
+      trivy_vulnerability_scan: 'yes'
+    secrets: inherit
