@@ -47,7 +47,7 @@ The recommendation is to use a GitHub App to run the migration - a GitHub app ha
 1. Create Private Key for GitHub App
 1. Obtain App ID and Installation ID - see [the instructions for using smee.io](https://josh-ops.com/posts/github-apps/#creating-a-github-app)
 1. Create the following action secrets:
-    + `ADO_PAT`: Azure DevOps PAT with appropriate permissions to read work items
+    + `ADO_PAT`: Azure DevOps PAT with appropriate permissions to read work and write items
     + `PRIVATE_KEY`: The contents of the private key created and downloaded in step #2
 1. Use the [action](.github/workflows/migrate-work-items.yml) and update the App ID and Installation ID obtained in step #3
 1. Update any defaults in the [action](.github/workflows/migrate-work-items.yml) (ie: Azure DevOps organization and project, GitHub organization and repo)
