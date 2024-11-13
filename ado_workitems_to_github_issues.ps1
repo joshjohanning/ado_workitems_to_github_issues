@@ -10,7 +10,13 @@
 #      - You can modify the WIQL if you want to use a different way to migrate work items, such as [TAG] = "migrate"
 
 # How to run:
-# ./ado_workitems_to_github_issues.ps1 -ado_pat "xxx" -ado_org "jjohanning0798" -ado_project "PartsUnlimited" -ado_area_path "PartsUnlimited\migrate" -ado_migrate_closed_workitems $false -ado_production_run $true -gh_pat "xxx" -gh_org "joshjohanning-org" -gh_repo "migrate-ado-workitems" -gh_update_assigned_to $true -gh_assigned_to_user_suffix "_corp" -gh_add_ado_comments $true
+# ./ado_workitems_to_github_issues.ps1 -ado_pat "xxx" -ado_org "jjohanning0798" -ado_project "PartsUnlimited" -ado_area_path "PartsUnlimited\migrate"  -gh_pat "xxx" -gh_org "joshjohanning-org" -gh_repo "migrate-ado-workitems" -gh_assigned_to_user_suffix "_corp"
+
+# Optional switches to add - if you add this parameter, this means you want it set to TRUE (for false, simply do not provide)
+# -ado_migrate_closed_workitems
+# -ado_production_run
+# -gh_update_assigned_to
+# -gh_add_ado_comments
 
 #
 # Things it migrates:
@@ -23,7 +29,7 @@
 #   a. Original work item url 
 #   b. Basic details in a collapsed markdown table
 #   c. Entire work item as JSON in a collapsed section
-# 7. Creates tag "copied-to-github" and a comment on the ADO work item with `-$ado_production_run $true` . The tag prevents duplicate copying.
+# 7. Creates tag "copied-to-github" and a comment on the ADO work item with `-$ado_production_run` . The tag prevents duplicate copying.
 #
 
 #
@@ -37,14 +43,14 @@ param (
     [string]$ado_org, # Azure devops org without the URL, eg: "MyAzureDevOpsOrg"
     [string]$ado_project, # Team project name that contains the work items, eg: "TailWindTraders"
     [string]$ado_area_path, # Area path in Azure DevOps to migrate; uses the 'UNDER' operator)
-    [bool]$ado_migrate_closed_workitems = $false, # migrate work items with the state of done, closed, resolved, and removed
-    [bool]$ado_production_run = $false, # tag migrated work items with 'migrated-to-github' and add discussion comment
+    [switch]$ado_migrate_closed_workitems, # migrate work items with the state of done, closed, resolved, and removed
+    [switch]$ado_production_run, # tag migrated work items with 'migrated-to-github' and add discussion comment
     [string]$gh_pat, # GitHub PAT
     [string]$gh_org, # GitHub organization to create the issues in
     [string]$gh_repo, # GitHub repository to create the issues in
-    [bool]$gh_update_assigned_to = $false, # try to update the assigned to field in GitHub
+    [switch]$gh_update_assigned_to, # try to update the assigned to field in GitHub
     [string]$gh_assigned_to_user_suffix = "", # the emu suffix, ie: "_corp"
-    [bool]$gh_add_ado_comments = $false # try to get ado comments
+    [switch]$gh_add_ado_comments # try to get ado comments
 )
 
 # Set the auth token for az commands

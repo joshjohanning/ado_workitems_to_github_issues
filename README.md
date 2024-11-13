@@ -23,7 +23,7 @@ PowerShell script to migrate Azure DevOps work items to GitHub Issues
     - Original work item url 
     - Basic details in a collapsed markdown table
     - Entire work item as JSON in a collapsed section
-7. Creates tag "copied-to-github" and a comment on the ADO work item with `-$ado_production_run $true"`. The tag prevents duplicate copying.
+7. Creates tag "copied-to-github" and a comment on the ADO work item with `-$ado_production_run"`. The tag prevents duplicate copying.
 
 ### To Do
 1. Provide user mapping option
@@ -64,21 +64,21 @@ Using the GitHub app might be better so you don't reach a limit on your GitHub a
     -ado_org "jjohanning0798" `
     -ado_project "PartsUnlimited" `
     -ado_area_path "PartsUnlimited\migrate" `
-    -ado_migrate_closed_workitems $false `
-    -ado_production_run $false `
+    -ado_migrate_closed_workitems `
+    -ado_production_run # IMPORTANT - USING THIS WILL UPDATE THE WORK ITEM IN ADO!`
     -gh_pat "ghp_xxx" `
     -gh_org "joshjohanning-org" `
     -gh_repo "migrate-ado-workitems" `
-    -gh_update_assigned_to $true `
+    -gh_update_assigned_to `
     -gh_assigned_to_user_suffix "" `
-    -gh_add_ado_comments $true
+    -gh_add_ado_comments
 ```
 
 ## Script Options
 
 | Parameter                       | Required | Default  | Description                                                                                                                                 |
 |---------------------------------|----------|----------|---------------------------------------------------------------------------------------------------------------------------------------------|
-| `-ado_pat`                      | Yes      |          | Azure DevOps Personal Access Token (PAT) with appropriate permissions to read work items (and update, with `-ado_production_run $true`)     |
+| `-ado_pat`                      | Yes      |          | Azure DevOps Personal Access Token (PAT) with appropriate permissions to read work items (and update, with `-ado_production_run`)     |
 | `-ado_org`                      | Yes      |          | Azure DevOps organization to migrate from                                                                                                   |
 | `-ado_project`                  | Yes      |          | Azure DevOps project to migrate from                                                                                                        |
 | `-ado_area_path`                | Yes      |          | Azure DevOps area path to migrate from - uses the `UNDER` operator                                                                          |
@@ -91,4 +91,4 @@ Using the GitHub app might be better so you don't reach a limit on your GitHub a
 | `-gh_assigned_to_user_suffix`   | No       | `""`     | Used in conjunction with `-gh_update_assigned_to`, used to suffix the username, e.g. if using GitHub Enterprise Managed User (EMU) instance |
 | `-gh_add_ado_comments`          | No       | `$false` | Switch to add ADO comments as a section with the migrated work item                                                                     |
 
-+ **Note**: With `-gh_update_assigned_to $true`, you/your users will receive a lot of emails from GitHub when the user is assigned to the issue
++ **Note**: With `-gh_update_assigned_to`, you/your users will receive a lot of emails from GitHub when the user is assigned to the issue
