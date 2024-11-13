@@ -40,19 +40,16 @@ PowerShell script to migrate Azure DevOps work items to GitHub Issues
 
 The recommendation is to use a GitHub App to run the migration - a GitHub app has higher rate limits than using a user PAT.
 
-1. Create GitHub App with (can use this [reference](https://josh-ops.com/posts/github-apps/#creating-a-github-app)). Use the following permissions:
-    + Repo: `Contents:Read`
-    + Repo: `Issues:Read and write`
-    + Org: `Members:Read`
-1. Create Private Key for GitHub App
-1. Obtain App ID and Installation ID - see [the instructions for using smee.io](https://josh-ops.com/posts/github-apps/#creating-a-github-app)
-1. Create the following action secrets:
-    + `ADO_PAT`: Azure DevOps PAT with appropriate permissions to read work and write items
-    + `PRIVATE_KEY`: The contents of the private key created and downloaded in step #2
-1. Use the [action](.github/workflows/migrate-work-items.yml) and update the App ID and Installation ID obtained in step #3
-1. Update any defaults in the [action](.github/workflows/migrate-work-items.yml) (ie: Azure DevOps organization and project, GitHub organization and repo)
-1. Ensure the action exists in the repo's default branch
-1. Run the workflow
+1. Create a (classic) GitHub personal access token with at least the following scopes:
+    + `repo` (all scopes here)
+    + `read:org`
+2. Create the following action secrets:
+    + `ADO_PAT`: Azure DevOps PAT with appropriate permissions to read work items
+    + `GH_PAT`: The value of the PAT created in step #1
+3. Use the [action](.github/workflows/migrate-work-items.yml)
+4. Update any defaults in the [action](.github/workflows/migrate-work-items.yml) (ie: Azure DevOps organization and project, GitHub organization, repo, and any other defaults you want changed)
+5. Ensure the action exists in the repo's default branch
+6. Run the workflow
 
 ## Instructions for Running Locally
 
