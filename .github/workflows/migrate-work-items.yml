@@ -24,7 +24,7 @@ on:
         description: tag migrated work items with migrated-to-github and add discussion comment
         required: true
         type: boolean
-        default: 'true'
+        default: 'false'
       gh-org:
         description: 'gh-org'
         required: true
@@ -53,40 +53,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@main
-      
-      - uses: tibdex/github-app-token@v1
-        id: get_installation_token
-        with: 
-          app_id: 179484
-          installation_id: 23995058
-          private_key: ${{ secrets.PRIVATE_KEY }}
+      - uses: actions/checkout@v4
+
+      - name: get az and az devops version
+        run: az --version
+
+      - name: get gh version
+        run: gh --version
+
+      # doesn't work with the (unofficial) issue migration API?
+      # - uses: actions/create-github-app-token@v1
+      #   id: app-token
+      #   with:
+      #     app-id: 179484 # work-item-migrator
+      #     private-key: ${{ secrets.PRIVATE_KEY }}
+      #     owner: ${{ github.repository_owner }}
       
       - name: run migration
-        shell: pwsh
+        shell: bash
         run: |
-          # run migration script
-          
-          $ado_migrate_closed_workitems_param=""
-          $ado_production_run_param=""
-          $gh_update_assigned_to_param=""
-          $gh_add_ado_comments_param=""
-          
-          if("${{ github.event.inputs.ado_migrate_closed_workitems }}" -eq "true") {
-            $ado_migrate_closed_workitems_param="-ado_migrate_closed_workitems"
-          }
+          ado_migrate_closed_workitems_param=""
+          ado_production_run_param=""
+          gh_update_assigned_to_param=""
+          gh_add_ado_comments_param=""
 
-          if("${{ github.event.inputs.ado_production_run }}" -eq "true") {
-            $ado_production_run_param="-ado_production_run"
-          }
+          if [ "${{ github.event.inputs.ado_migrate_closed_workitems }}" == "true" ]; then
+            ado_migrate_closed_workitems_param="--ado_migrate_closed_workitems"
+          fi
 
-          if("${{ github.event.inputs.gh_update_assigned_to }}" -eq "true") {
-            $gh_update_assigned_to_param="-gh_update_assigned_to"
-          }
-          
-          if("${{ github.event.inputs.gh_add_ado_comments }}" -eq "true") {
-            $gh_add_ado_comments_param="-gh_add_ado_comments"
-          }
-          
-          ./ado_workitems_to_github_issues.ps1 -ado_pat "${{ SECRETS.ADO_PAT }}" -ado_org "${{ github.event.inputs.ado-org }}" -ado_project "${{ github.event.inputs.ado-project }}" -ado_area_path "${{ github.event.inputs.ado_area_path }}" $ado_migrate_closed_workitems_param $ado_production_run_param -gh_pat "${{ steps.get_installation_token.outputs.token }}" -gh_org "${{ github.event.inputs.gh-org }}" -gh_repo "${{ github.event.inputs.gh-repo }}" $gh_update_assigned_to_param -gh_assigned_to_user_suffix "${{ github.event.inputs.gh_assigned_to_user_suffix }}" $gh_add_ado_comments_param
-          
+          if [ "${{ github.event.inputs.ado_production_run }}" == "true" ]; then
+            ado_production_run_param="--ado_production_run"
+          fi
+
+          if [ "${{ github.event.inputs.gh_update_assigned_to }}" == "true" ]; then
+            gh_update_assigned_to_param="--gh_update_assigned_to"
+          fi
+
+          if [ "${{ github.event.inputs.gh_add_ado_comments }}" == "true" ]; then
+            gh_add_ado_comments_param="--gh_add_ado_comments"
+          fi
+
+          pwsh ./ado_workitems_to_github_issues.ps1 -ado_pat "${{ secrets.ADO_PAT }}" -ado_org "${{ github.event.inputs.ado-org }}" -ado_project "${{ github.event.inputs.ado-project }}" -ado_area_path "${{ github.event.inputs.ado_area_path }}" $ado_migrate_closed_workitems_param $ado_production_run_param -gh_pat "${{ secrets.GH_PAT }}" -gh_org "${{ github.event.inputs.gh-org }}" -gh_repo "${{ github.event.inputs.gh-repo }}" $gh_update_assigned_to_param -gh_assigned_to_user_suffix "${{ github.event.inputs.gh_assigned_to_user_suffix }}" $gh_add_ado_comments_param
