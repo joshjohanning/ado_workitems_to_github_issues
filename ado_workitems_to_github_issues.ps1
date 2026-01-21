@@ -63,25 +63,25 @@ param (
     [string]$ado_org, # Azure devops org without the URL, eg: "MyAzureDevOpsOrg"
     [string]$ado_project, # Team project name that contains the work items, eg: "TailWindTraders"
     [string]$ado_area_path, # Area path in Azure DevOps to migrate; uses the 'UNDER' operator)
-    [bool] $ado_migrate_closed_workitems = $false, # migrate work items with the state of done, closed, resolved, and removed
-    [bool]$ado_production_run = $false, # tag migrated work items with 'migrated-to-github' and add discussion comment
+    [System.ComponentModel.DefaultValueAttribute($false)]$ado_migrate_closed_workitems = $false, # migrate work items with the state of done, closed, resolved, and removed
+    [System.ComponentModel.DefaultValueAttribute($false)]$ado_production_run = $false, # tag migrated work items with 'migrated-to-github' and add discussion comment
     [string]$gh_pat, # GitHub PAT
     [string]$gh_org, # GitHub organization to create the issues in
     [string]$gh_repo, # GitHub repository to create the issues in
     [string]$gh_project_name = $null, # GitHub V2 project to associate issues with
-    [bool]$gh_update_assigned_to = $false, # try to update the assigned to field in GitHub
+    [System.ComponentModel.DefaultValueAttribute($false)]$gh_update_assigned_to = $false, # try to update the assigned to field in GitHub
     [string]$gh_assigned_to_user_suffix = "", # the emu suffix, ie: "_corp"
-    [bool]$gh_add_ado_comments = $false, # try to get ado comments
+    [System.ComponentModel.DefaultValueAttribute($false)]$gh_add_ado_comments = $false, # try to get ado comments
     [string]$gh_milestone_iteration_name_prefix = "", # milestone name prefix when importanting iteration names from Azure DevOps
-    [bool]$gh_ensure_labels_exist = $true, # ensure that the labels exist in the GitHub repo
+    [System.ComponentModel.DefaultValueAttribute($false)]$gh_ensure_labels_exist = $true, # ensure that the labels exist in the GitHub repo
     [string[]]$gh_labels = @("ado-export 📤"), # define an array of label strings to be added to the issue
     [string]$ado_to_gh_workitem_checkpoint_file = $null, # path to a JSON file to write the ADO work item ID and GitHub issue URL to
-    [bool]$sync_ado_iterations_to_gh_milestones = $true, # sync Azure DevOps iterations to GitHub milestones
-    [bool]$gh_mention_related_items = $false, # mention related items in the issue body, use with caution as these cannot be removed once added
-    [bool]$gh_update_existing_issues = $true, # update existing issues with new information
+    [System.ComponentModel.DefaultValueAttribute($false)]$sync_ado_iterations_to_gh_milestones = $true, # sync Azure DevOps iterations to GitHub milestones
+    [System.ComponentModel.DefaultValueAttribute($false)]$gh_mention_related_items = $false, # mention related items in the issue body, use with caution as these cannot be removed once added
+    [System.ComponentModel.DefaultValueAttribute($false)]$gh_update_existing_issues = $true, # update existing issues with new information
     [string]$gh_archive_closed_items_label = "archive 🗃️", # marked closed items as archived the provided label, empty avoids adding a label
-    [bool]$gh_deduplicate_existing_issues = $true, # deduplicate existing issues based on title. WARNING: potentially dangerous as it will take the latest issue when deduplicating
-    [bool]$gh_wait_for_rate_limit_reset = $true, # wait for the GitHub API rate limit to reset before continuing, useful for large migrations but slow as it waits for 1 hour to allow the rate limit to reset
+    [System.ComponentModel.DefaultValueAttribute($false)]$gh_deduplicate_existing_issues = $true, # deduplicate existing issues based on title. WARNING: potentially dangerous as it will take the latest issue when deduplicating
+    [System.ComponentModel.DefaultValueAttribute($false)]$gh_wait_for_rate_limit_reset = $true, # wait for the GitHub API rate limit to reset before continuing, useful for large migrations but slow as it waits for 1 hour to allow the rate limit to reset
     [string]$config_file = $null, # path to a JSON file to load configuration from, see MigrationConfig::ImportConfig for fields supported
     [int32]$ado_start_workitem_id = 0 # the Azure DevOps work item ID to start from, useful for resuming a migration
 )
@@ -158,6 +158,27 @@ function ConvertTo-OrderedDictionary() {
     return $map
 }
 
+function Get-GitHubRepoInfo() {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$org,
+        [Parameter(Mandatory = $true)]
+        [string]$repo
+    )
+    $repoInfo = gh repo view $org/$repo --json="${script:GITHUB_REPO_JSON_FIELDS}" | ConvertFrom-JSON
+    return $repoInfo
+
+}
+
+function Get-GithubProjectFromName() {
+    param(
+        [string]$projectName, # the name of the project to get the number for, e.g. "My Project"
+        [string]$githubOrg  # the name of the github org to get the project number for, e.g. "MyOrg"
+    )
+    $projects = (gh project list --owner $githubOrg --format json | ConvertFrom-Json).projects
+    $project = $projects | Where-Object { $_.title -eq "$projectName" }
+    return $project
+}
 
 class GithubProject {
     [Int32]$number
@@ -174,6 +195,7 @@ class GithubProject {
 
     GithubProject($projectName, $githubOrg) {
         $proj = Get-GithubProjectFromName -projectName $projectName -githubOrg $githubOrg
+        echo $proj
         if (!$proj) {
             $proj = gh project create --title="$projectName" --owner=$githubOrg --format=json | ConvertFrom-JSON
         }
@@ -438,18 +460,6 @@ function Get-AzureDevOpsUsers() {
 
 $script:GITHUB_REPO_JSON_FIELDS = "name,owner,description,homepageUrl,hasIssuesEnabled,hasWikiEnabled,hasProjectsEnabled,licenseInfo,visibility,createdAt,updatedAt,primaryLanguage,openGraphImageUrl,labels,milestones"
 
-function Get-GitHubRepoInfo() {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$org,
-        [Parameter(Mandatory = $true)]
-        [string]$repo
-    )
-    $repoInfo = gh repo view $org/$repo --json="${script:GITHUB_REPO_JSON_FIELDS}" | ConvertFrom-JSON
-    return $repoInfo
-
-}
-
 enum GithubRepoVisibility {
     PUBLIC
     PRIVATE
@@ -583,16 +593,6 @@ function Get-CachedGitHubRepositoryMilestones() {
     $repoMilestones = @{}
     ${script:state}.githubRepositoryInfo.milestones | ForEach-Object { $repoMilestones[$_.title] = $_ }
     return $repoMilestones
-}
-
-function Get-GithubProjectFromName() {
-    param(
-        [string]$projectName, # the name of the project to get the number for, e.g. "My Project"
-        [string]$githubOrg  # the name of the github org to get the project number for, e.g. "MyOrg"
-    )
-    $projects = (gh projects list --org $githubOrg --format json | ConvertFrom-Json).projects
-    $project = $projects | Where-Object { $_.title -eq "$projectName" }
-    return $project
 }
 
 function Get-AzureDevopsTagArray() {
