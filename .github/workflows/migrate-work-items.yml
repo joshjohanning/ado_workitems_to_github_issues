@@ -66,7 +66,7 @@ jobs:
       #   id: app-token
       #   with:
       #     client-id: 179484 # work-item-migrator
-      #     private-key: ${{ secrets.PRIVATE_KEY }}
+      #     private-key: ${{ secrets.APP_PRIVATE_KEY }}
       #     owner: ${{ github.repository_owner }}
       
       - name: run migration
